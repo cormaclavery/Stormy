@@ -1,13 +1,34 @@
-package com.cormaclavery.stormy.ui;
+package com.cormaclavery.stormy.UI;
 
-import android.support.v7.app.AppCompatActivity;
+import android.app.ListActivity;
+import android.content.Intent;
+import android.os.Parcelable;
 import android.os.Bundle;
 
-public class DailyForecastActivity extends AppCompatActivity {
+import com.cormaclavery.stormy.R;
+import com.cormaclavery.stormy.adapters.DayAdapter;
+import com.cormaclavery.stormy.weather.Day;
+
+import java.util.Arrays;
+
+public class DailyForecastActivity extends ListActivity {
+
+    private Day[] mDays;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_daily_forecast);
+
+        Intent intent = getIntent();
+        Parcelable[] parcelables = intent.getParcelableArrayExtra(MainActivity.DAILY_FORECAST);
+        mDays = Arrays.copyOf(parcelables, parcelables.length, Day[].class);
+
+        DayAdapter adapter = new DayAdapter(this, mDays);
+        setListAdapter(adapter);
+
     }
+
+
+
 }
