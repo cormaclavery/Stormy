@@ -4,6 +4,8 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Parcelable;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ListView;
 
 import com.cormaclavery.stormy.R;
 import com.cormaclavery.stormy.adapters.DayAdapter;
@@ -28,7 +30,6 @@ public class DailyForecastActivity extends ListActivity {
         setListAdapter(adapter);
 
     }
-
 
 
 }

@@ -9,6 +9,8 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -38,15 +40,11 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class MainActivity extends FragmentActivity implements LocationProvider.LocationCallback{
+public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = MainActivity.class.getSimpleName();
-
-
     public static final String DAILY_FORECAST = "DAILY_FORECAST";
     public static final String HOURLY_FORECAST = "HOURLY_FORECAST";
-
-    private LocationProvider mLocationProvider;
 
     private Forecast mForecast;
 
@@ -70,7 +68,6 @@ public class MainActivity extends FragmentActivity implements LocationProvider.L
         final double latitude = 51.5034070;
         final double longitude = -0.1275920;
 
-        mLocationProvider = new LocationProvider(this, this);
 
         mProgressBar.setVisibility(View.INVISIBLE);
 
@@ -288,7 +285,7 @@ public class MainActivity extends FragmentActivity implements LocationProvider.L
 
     private void alertUserAboutError() {
         AlertDialogFragment dialog = new AlertDialogFragment();
-        dialog.show(getFragmentManager(),"error_dialog");
+        dialog.show(getFragmentManager(), "error_dialog");
     }
 
     @OnClick (R.id.dailyView)
@@ -305,12 +302,4 @@ public class MainActivity extends FragmentActivity implements LocationProvider.L
         startActivity(intent);
     }
 
-
-    public void handleNewLocation(Location location){
-        Log.d(TAG, location.toString());
-
-        double currentLatitude = location.getLatitude();
-        double currentLongitude = location.getLongitude();
-        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
-    }
 }
