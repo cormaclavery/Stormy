@@ -1,12 +1,17 @@
 package com.cormaclavery.stormy.UI;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 
 import android.support.v7.app.ActionBarActivity;
@@ -23,6 +28,10 @@ import com.cormaclavery.stormy.weather.Current;
 import com.cormaclavery.stormy.weather.Day;
 import com.cormaclavery.stormy.weather.Forecast;
 import com.cormaclavery.stormy.weather.Hour;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;
@@ -41,33 +50,48 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     public static final String TAG = MainActivity.class.getSimpleName();
     public static final String DAILY_FORECAST = "DAILY_FORECAST";
     public static final String HOURLY_FORECAST = "HOURLY_FORECAST";
 
     private Forecast mForecast;
+    private GoogleApiClient mGoogleApiClient;
+    private LocationRequest mLocationRequest;
+    private LatLng mCurrentLatLng;
 
-    @Bind(R.id.timeLabel) TextView mTimeLabel;
-    @Bind(R.id.temperatureLabel) TextView mTemperatureLabel;
-    @Bind(R.id.humidityValue) TextView mHumidityValue;
-    @Bind(R.id.precipValue) TextView mPrecipValue;
-    @Bind(R.id.summaryLabel) TextView mSummaryLabel;
-    @Bind(R.id.iconImageView) ImageView mIconImageView;
-    @Bind(R.id.refreshImageView) ImageView mRefreshImageView;
-    @Bind(R.id.progressBar) ProgressBar mProgressBar;
-
+    @Bind(R.id.timeLabel)
+    TextView mTimeLabel;
+    @Bind(R.id.temperatureLabel)
+    TextView mTemperatureLabel;
+    @Bind(R.id.humidityValue)
+    TextView mHumidityValue;
+    @Bind(R.id.precipValue)
+    TextView mPrecipValue;
+    @Bind(R.id.summaryLabel)
+    TextView mSummaryLabel;
+    @Bind(R.id.iconImageView)
+    ImageView mIconImageView;
+    @Bind(R.id.refreshImageView)
+    ImageView mRefreshImageView;
+    @Bind(R.id.progressBar)
+    ProgressBar mProgressBar;
+    @Bind(R.id.locationLabel)
+    TextView mLocationLabel;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState)  ;
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
         final double latitude = 51.5034070;
         final double longitude = -0.1275920;
+
+        getLocation();
 
 
         mProgressBar.setVisibility(View.INVISIBLE);
@@ -76,10 +100,9 @@ public class MainActivity extends AppCompatActivity {
         mRefreshImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getForecast(latitude, longitude);
+                getForecast(mCurrentLatLng.latitude, mCurrentLatLng.longitude);
             }
         });
-
 
 
         getForecast(latitude, longitude);
@@ -88,6 +111,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void getLocation() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this).build();
+    }
 
 
     private void getForecast(double latitude, double longitude) {
@@ -96,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
 
         String forecastUrl = "https://api.forecast.io/forecast/" + apiKey
                 + "/" + latitude + "," + longitude;
-        if(isNetworkAvailable()) {
+        if (isNetworkAvailable()) {
 
             toggleRefresh();
 
@@ -152,19 +181,17 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             });
-        }
-        else {
+        } else {
             Toast.makeText(this, R.string.network_unavailable_message, Toast.LENGTH_LONG).show();
         }
     }
 
     private void toggleRefresh() {
 
-        if(mProgressBar.getVisibility()== View.INVISIBLE) {
+        if (mProgressBar.getVisibility() == View.INVISIBLE) {
             mProgressBar.setVisibility(View.VISIBLE);
             mRefreshImageView.setVisibility(View.INVISIBLE);
-        }
-        else{
+        } else {
             mProgressBar.setVisibility(View.INVISIBLE);
             mRefreshImageView.setVisibility(View.VISIBLE);
         }
@@ -182,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
         mIconImageView.setImageDrawable(drawable);
     }
 
-    private Forecast parseForecastDetails(String JsonData) throws JSONException{
+    private Forecast parseForecastDetails(String JsonData) throws JSONException {
         Forecast forecast = new Forecast();
 
         forecast.setCurrent(getCurrentDetails(JsonData));
@@ -192,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
         return forecast;
     }
 
-    private Day[] ForecastGetDailyForecast(String jsonData) throws JSONException{
+    private Day[] ForecastGetDailyForecast(String jsonData) throws JSONException {
         JSONObject forecast = new JSONObject(jsonData);
         String timezone = forecast.getString("timezone");
         JSONObject daily = forecast.getJSONObject("daily");
@@ -200,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
 
         Day[] days = new Day[data.length()];
 
-        for(int i = 0; i < days.length; i++){
+        for (int i = 0; i < days.length; i++) {
             JSONObject jsonDay = data.getJSONObject(i);
             Day day = new Day();
 
@@ -217,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
         return days;
     }
 
-    private Hour[] getHourlyForecast(String jsonData) throws JSONException{
+    private Hour[] getHourlyForecast(String jsonData) throws JSONException {
         JSONObject forecast = new JSONObject(jsonData);
         String timezone = forecast.getString("timezone");
         JSONObject hourly = forecast.getJSONObject("hourly");
@@ -225,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
 
         Hour[] hours = new Hour[data.length()];
 
-        for (int i = 0; i < hours.length; i++){
+        for (int i = 0; i < hours.length; i++) {
 
             JSONObject jsonHour = data.getJSONObject(i);
             Hour hour = new Hour();
@@ -243,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private Current getCurrentDetails(String jsonData) throws JSONException{
+    private Current getCurrentDetails(String jsonData) throws JSONException {
         JSONObject forecast = new JSONObject(jsonData);
         String timezone = forecast.getString("timezone");
         JSONObject currently = forecast.getJSONObject("currently");
@@ -256,8 +283,6 @@ public class MainActivity extends AppCompatActivity {
         current.setTime(currently.getLong("time"));
         current.setIcon(currently.getString("icon"));
         current.setTimeZone(timezone);
-
-
 
 
         Log.i(TAG, "CURRENT TIME: " + current.getFormattedTime());
@@ -275,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
                 getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = manager.getActiveNetworkInfo();
         boolean isAvailable = false;
-        if(networkInfo!=null && networkInfo.isConnected()){
+        if (networkInfo != null && networkInfo.isConnected()) {
             isAvailable = true;
         }
 
@@ -287,24 +312,98 @@ public class MainActivity extends AppCompatActivity {
         dialog.show(getFragmentManager(), "error_dialog");
     }
 
-    @OnClick (R.id.dailyView)
-    public void startDailyActivity(View view){
+    @OnClick(R.id.dailyView)
+    public void startDailyActivity(View view) {
         Intent intent = new Intent(this, DailyForecastActivity.class);
         intent.putExtra(DAILY_FORECAST, mForecast.getDailyForecast());
         startActivity(intent);
     }
 
     @OnClick(R.id.hourlyView)
-    public void startHourlyActivity(View view){
+    public void startHourlyActivity(View view) {
         Intent intent = new Intent(this, HourlyForecastActivity.class);
         intent.putExtra(HOURLY_FORECAST, mForecast.getHourlyForecast());
         startActivity(intent);
     }
 
-    public void getNotificationTime(){
+    public void getNotificationTime() {
         Calendar c = Calendar.getInstance();
         int seconds = c.get(Calendar.SECOND);
         Log.d(TAG, "Current time in seconds: " + seconds);
     }
 
+    protected void onStart() {
+        super.onStart();
+        // Connect the client.
+        mGoogleApiClient.connect();
+    }
+
+    protected void onStop() {
+        // Disconnecting the client invalidates it.
+        //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+
+        // only stop if it's connected, otherwise we crash
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.disconnect();
+        }
+        super.onStop();
+    }
+
+    public void onConnected(Bundle dataBundle) {
+        // Get last known recent location.
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    1);
+        }
+        Location mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        // Note that this can be NULL if last location isn't already known.
+        if (mCurrentLocation != null) {
+            // Print current location if not null
+            Log.d("DEBUG", "current location: " + mCurrentLocation.toString());
+            mCurrentLatLng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+        }
+        // Begin polling for new location updates.
+
+
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                } else {
+
+                    mCurrentLatLng = new LatLng(11,11);
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        if (i == CAUSE_SERVICE_DISCONNECTED) {
+            Toast.makeText(this, "Disconnected. Please re-connect.", Toast.LENGTH_SHORT).show();
+        } else if (i == CAUSE_NETWORK_LOST) {
+            Toast.makeText(this, "Network lost. Please re-connect.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
 }

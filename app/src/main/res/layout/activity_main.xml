@@ -39,17 +39,6 @@
         android:textColor="#80ffffff"
         android:textSize="18sp"/>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Co. Kerry, IE"
-        android:id="@+id/locationLabel"
-        android:layout_centerHorizontal="true"
-        android:layout_above="@+id/timeLabel"
-        android:layout_marginBottom="50dp"
-        android:textColor="@android:color/white"
-        android:textSize="24sp"/>
-
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -173,5 +162,16 @@
             android:background="#40ffffff"
             android:textColor="#ffffffff"/>
     </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Dublin, IE"
+        android:id="@+id/locationLabel"
+        android:textColor="@android:color/white"
+        android:textSize="24sp"
+        android:layout_below="@+id/refreshImageView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="42dp"/>
 
 </RelativeLayout>
