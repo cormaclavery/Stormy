@@ -33,7 +33,7 @@ public class DayAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return 0; // we aren't goint to use this, used to tag items for easy reference
+        return position;
     }
 
     @Override

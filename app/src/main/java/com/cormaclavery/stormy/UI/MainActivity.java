@@ -30,6 +30,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Calendar;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -70,8 +71,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         mProgressBar.setVisibility(View.INVISIBLE);
-
-
 
 
         mRefreshImageView.setOnClickListener(new View.OnClickListener() {
@@ -300,6 +299,12 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, HourlyForecastActivity.class);
         intent.putExtra(HOURLY_FORECAST, mForecast.getHourlyForecast());
         startActivity(intent);
+    }
+
+    public void getNotificationTime(){
+        Calendar c = Calendar.getInstance();
+        int seconds = c.get(Calendar.SECOND);
+        Log.d(TAG, "Current time in seconds: " + seconds);
     }
 
 }
